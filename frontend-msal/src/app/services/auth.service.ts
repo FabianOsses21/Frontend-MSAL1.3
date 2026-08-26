@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { MsalService } from '@azure/msal-angular';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -10,7 +11,11 @@ export class AuthService {
 
   login(): void {
     this.msalService.loginRedirect({
-      scopes: ['openid', 'profile'],
+      scopes: [
+        'openid',
+        'profile',
+        environment.azure.backendScope
+      ],
       prompt: 'select_account',
     });
   }

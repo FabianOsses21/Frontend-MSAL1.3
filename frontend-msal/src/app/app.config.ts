@@ -4,6 +4,7 @@ import {
 } from '@angular/core';
 
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 
 import {
   MsalService,
@@ -23,6 +24,8 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
 
     provideRouter(routes),
+
+    provideHttpClient(),
 
     {
       provide: MSAL_INSTANCE,
