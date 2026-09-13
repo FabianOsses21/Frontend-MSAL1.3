@@ -27,6 +27,13 @@ import {
       }
     </section>
 
+    @if (barrio.cargando()) {
+      <div class="loading-bar">
+        <span class="spinner spinner-dark"></span>
+        <span>Sincronizando datos con API Gateway / Backend...</span>
+      </div>
+    }
+
     @if (auth.roles.length === 0) {
       <div class="notice" role="status">
         Tu sesión de Microsoft está activa, pero no tienes un rol
@@ -84,7 +91,7 @@ import {
 })
 export class DashboardComponent {
   readonly auth = inject(AuthService);
-  private barrio = inject(BarrioService);
+  readonly barrio = inject(BarrioService);
 
   readonly etiquetas = ETIQUETAS_ESTADO;
 

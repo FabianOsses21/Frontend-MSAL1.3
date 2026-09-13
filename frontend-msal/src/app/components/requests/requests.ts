@@ -29,6 +29,13 @@ import {
       </div>
     </section>
 
+    @if (barrio.cargando()) {
+      <div class="loading-bar">
+        <span class="spinner spinner-dark"></span>
+        <span>Sincronizando con API Gateway / Backend...</span>
+      </div>
+    }
+
     @if (error) {
       <div class="notice error" role="alert">{{ error }}</div>
     }
@@ -89,7 +96,10 @@ import {
           </div>
 
           <div class="actions">
-            <button type="submit">
+            <button type="submit" [disabled]="barrio.cargando()">
+              @if (barrio.cargando()) {
+                <span class="spinner"></span>
+              }
               {{ editandoId ? 'Guardar cambios' : 'Ingresar trámite' }}
             </button>
 

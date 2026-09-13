@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 
 import { AuthService } from './auth.service';
+import { OrderService } from './order.service';
 
 import {
   EstadoTramite,
@@ -14,6 +15,13 @@ import {
 })
 export class BarrioService {
   private auth = inject(AuthService);
+  private orderService = inject(OrderService);
+
+  private _cargando = signal<boolean>(false);
+  readonly cargando = this._cargando.asReadonly();
+
+  private _errorHttp = signal<string | null>(null);
+  readonly errorHttp = this._errorHttp.asReadonly();
 
   private tiposState = signal<TipoTramite[]>([
     {
@@ -42,6 +50,59 @@ export class BarrioService {
   private tramitesState = signal<Tramite[]>([]);
 
   readonly tipos = this.tiposState.asReadonly();
+
+  constructor() {
+    this.cargarDesdeBackend();
+  }
+
+  /**
+   * Sincroniza las órdenes y catálogo con el Backend / AWS API Gateway.
+   * Utiliza OrderService y MsalInterceptor para inyectar Authorization: Bearer.
+   */
+  cargarDesdeBackend(): void {
+    if (!this.auth.isLoggedIn()) {
+      return;
+    }
+
+    this._cargando.set(true);
+    this._errorHttp.set(null);
+
+    this.orderService.getOrders().subscribe({
+      next: (ordenes) => {
+        if (Array.isArray(ordenes) && ordenes.length > 0) {
+          this.tramitesState.set(ordenes);
+        }
+        this._cargando.set(false);
+      },
+      error: (err: Error) => {
+        // Si el microservicio en AWS aún no está desplegado o está en proceso,
+        // se informa de manera clara sin bloquear la experiencia local.
+        console.warn(
+          'API Gateway / Microservicio aún no disponible:',
+          err.message,
+        );
+        this._cargando.set(false);
+      },
+    });
+
+    this.orderService.getCatalog().subscribe({
+      next: (catalogo) => {
+        if (Array.isArray(catalogo) && catalogo.length > 0) {
+          this.tiposState.set(catalogo);
+        }
+      },
+      error: (err: Error) => {
+        console.warn(
+          'API Gateway / Catálogo no disponible:',
+          err.message,
+        );
+      },
+    });
+  }
+
+  limpiarErrorHttp(): void {
+    this._errorHttp.set(null);
+  }
 
   tramitesVisibles(): Tramite[] {
     if (!this.auth.puedeCrear) {
@@ -123,7 +184,38 @@ export class BarrioService {
       fechaActualizacion: ahora,
     };
 
+    // Actualización inmediata del estado reactivo
     this.tramitesState.update((actuales) => [tramite, ...actuales]);
+
+    // Envío asíncrono al backend con OrderService
+    this._cargando.set(true);
+    this._errorHttp.set(null);
+
+    this.orderService
+      .createOrder({
+        tipoId: tipo.id,
+        asunto: asunto.trim(),
+        descripcion: descripcion.trim(),
+        propietarioId: this.auth.userId,
+        propietarioNombre: this.auth.username,
+      })
+      .subscribe({
+        next: (ordenCreada) => {
+          if (ordenCreada?.id) {
+            this.tramitesState.update((actuales) =>
+              actuales.map((t) => (t.id === tramite.id ? ordenCreada : t)),
+            );
+          }
+          this._cargando.set(false);
+        },
+        error: (err: Error) => {
+          console.warn(
+            'No se pudo persistir en backend remoto (se mantiene local):',
+            err.message,
+          );
+          this._cargando.set(false);
+        },
+      });
   }
 
   puedeEditar(tramite: Tramite): boolean {
@@ -218,6 +310,21 @@ export class BarrioService {
           : item,
       ),
     );
+
+    // Notificación asíncrona al backend
+    this._cargando.set(true);
+    this.orderService.updateOrderStatus(id, nuevoEstado).subscribe({
+      next: () => {
+        this._cargando.set(false);
+      },
+      error: (err: Error) => {
+        console.warn(
+          'Actualización remota de estado no completada:',
+          err.message,
+        );
+        this._cargando.set(false);
+      },
+    });
   }
 
   guardarTipo(
