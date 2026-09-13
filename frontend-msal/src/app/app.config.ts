@@ -41,6 +41,16 @@ function interceptorConfigFactory(): MsalInterceptorConfiguration {
     [environment.azure.backendScope],
   );
 
+  protectedResourceMap.set(
+    `${environment.apiUrl}/api/ordenes*`,
+    [environment.azure.backendScope],
+  );
+
+  protectedResourceMap.set(
+    `${environment.apiUrl}/api/orders*`,
+    [environment.azure.backendScope],
+  );
+
   return {
     interactionType: InteractionType.Redirect,
     protectedResourceMap,
