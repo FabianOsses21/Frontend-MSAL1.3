@@ -1,23 +1,51 @@
 import {
   ApplicationConfig,
-  provideBrowserGlobalErrorListeners
+  provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
 
 import {
-  MsalService,
-  MsalGuard,
-  MsalBroadcastService,
+  HTTP_INTERCEPTORS,
+  provideHttpClient,
+  withInterceptorsFromDi,
+} from '@angular/common/http';
+
+import {
+  MSAL_GUARD_CONFIG,
   MSAL_INSTANCE,
-  MSAL_GUARD_CONFIG
+  MSAL_INTERCEPTOR_CONFIG,
+  MsalBroadcastService,
+  MsalGuard,
+  MsalInterceptor,
+  MsalInterceptorConfiguration,
+  MsalService,
 } from '@azure/msal-angular';
 
 import { InteractionType } from '@azure/msal-browser';
 
 import { routes } from './app.routes';
 import { MSALInstanceFactory } from './factories/msal-instance.factory';
+import { environment } from '../environments/environment';
+
+function interceptorConfigFactory(): MsalInterceptorConfiguration {
+  const protectedResourceMap = new Map<string, string[] | null>();
+
+  protectedResourceMap.set(
+    `${environment.apiUrl}/api/requests*`,
+    [environment.azure.backendScope],
+  );
+
+  protectedResourceMap.set(
+    `${environment.apiUrl}/api/catalog*`,
+    [environment.azure.backendScope],
+  );
+
+  return {
+    interactionType: InteractionType.Redirect,
+    protectedResourceMap,
+  };
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,7 +53,7 @@ export const appConfig: ApplicationConfig = {
 
     provideRouter(routes),
 
-    provideHttpClient(),
+    provideHttpClient(withInterceptorsFromDi()),
 
     {
       provide: MSAL_INSTANCE,
@@ -36,10 +64,28 @@ export const appConfig: ApplicationConfig = {
       provide: MSAL_GUARD_CONFIG,
       useValue: {
         interactionType: InteractionType.Redirect,
+
         authRequest: {
-          scopes: ['openid', 'profile'],
+          scopes: [
+            'openid',
+            'profile',
+            environment.azure.backendScope,
+          ],
         },
+
+        loginFailedRoute: '/login',
       },
+    },
+
+    {
+      provide: MSAL_INTERCEPTOR_CONFIG,
+      useFactory: interceptorConfigFactory,
+    },
+
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: MsalInterceptor,
+      multi: true,
     },
 
     MsalService,

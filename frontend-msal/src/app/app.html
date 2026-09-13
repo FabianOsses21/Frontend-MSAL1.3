@@ -1,1 +1,57 @@
-<router-outlet></router-outlet>
+@if (auth.isLoggedIn()) {
+  <header class="topbar">
+    <a class="brand" routerLink="/dashboard">BarrioDigital</a>
+
+    <nav aria-label="Navegación principal">
+      <a
+        routerLink="/dashboard"
+        routerLinkActive="active"
+        ariaCurrentWhenActive="page"
+      >
+        Dashboard
+      </a>
+
+      @if (auth.puedeCrear) {
+        <a
+          routerLink="/requests"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          Trámites
+        </a>
+      }
+
+      @if (auth.puedeVerCatalogo) {
+        <a
+          routerLink="/catalog"
+          routerLinkActive="active"
+          ariaCurrentWhenActive="page"
+        >
+          Catálogo
+        </a>
+      }
+    </nav>
+
+    <div class="user-menu">
+      <div>
+        <strong>{{ auth.username }}</strong>
+        <small>{{ auth.roles.join(', ') || 'Sin rol asignado' }}</small>
+      </div>
+
+      <button type="button" class="secondary" (click)="logout()">
+        Salir
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="demo-banner">
+      Modo demostración: los trámites y cambios de catálogo
+      se reinician al recargar la página.
+    </div>
+
+    <router-outlet></router-outlet>
+  </main>
+} @else {
+  <router-outlet></router-outlet>
+}

@@ -1,49 +1,43 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
+
+import {
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+  ],
+
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
 export class App implements OnInit {
+  readonly auth = inject(AuthService);
 
-  private msalService = inject(MsalService);
   private router = inject(Router);
 
   ngOnInit(): void {
+    const path = window.location.pathname;
 
-    this.msalService.handleRedirectObservable().subscribe({
-      next: (result) => {
-
-        if (result?.account) {
-          this.msalService.instance.setActiveAccount(result.account);
-
-          console.log('Usuario autenticado:', result.account);
-
-          this.router.navigate(['/home']);
-        }
-      },
-
-      error: (error) => {
-        console.error(
-          'Error procesando autenticación MSAL:',
-          error
-        );
-      },
-    });
-
-    // Si ya existe una sesión, establecemos la cuenta activa
-    const accounts = this.msalService.instance.getAllAccounts();
-
-    if (accounts.length > 0) {
-      this.msalService.instance.setActiveAccount(accounts[0]);
-
-      console.log('Sesión existente:', accounts[0]);
-
-      this.router.navigate(['/home']);
+    if (
+      this.auth.isLoggedIn() &&
+      (path === '/' || path === '/login' || path === '/home')
+    ) {
+      void this.router.navigateByUrl('/dashboard');
     }
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 }
