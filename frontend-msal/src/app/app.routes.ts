@@ -7,54 +7,45 @@ import { roleGuard } from './guards/role.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    component: LoginComponent,
     pathMatch: 'full',
   },
-
   {
     path: 'login',
-    component: LoginComponent,
+    redirectTo: '',
+    pathMatch: 'full',
   },
-
+  {
+    path: 'home',
+    redirectTo: '',
+    pathMatch: 'full',
+  },
   {
     path: 'dashboard',
     canActivate: [MsalGuard],
-
     loadComponent: () =>
       import('./components/dashboard/dashboard')
         .then((m) => m.DashboardComponent),
   },
-
   {
     path: 'requests',
     canActivate: [MsalGuard],
-
     loadComponent: () =>
       import('./components/requests/requests')
         .then((m) => m.RequestsComponent),
   },
-
   {
     path: 'catalog',
     canActivate: [MsalGuard, roleGuard],
-
     data: {
       roles: ['Admin', 'Funcionario'],
     },
-
     loadComponent: () =>
       import('./components/catalog/catalog')
         .then((m) => m.CatalogComponent),
   },
-
-  {
-    path: 'home',
-    redirectTo: 'dashboard',
-    pathMatch: 'full',
-  },
-
   {
     path: '**',
-    redirectTo: 'dashboard',
+    redirectTo: '',
   },
 ];

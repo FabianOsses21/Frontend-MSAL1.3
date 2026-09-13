@@ -1,8 +1,16 @@
 @if (auth.isLoggedIn()) {
   <header class="topbar">
-    <a class="brand" routerLink="/dashboard">BarrioDigital</a>
+    <a class="brand" routerLink="/">BarrioDigital</a>
 
     <nav aria-label="Navegación principal">
+            <a
+        routerLink="/"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        ariaCurrentWhenActive="page"
+      >
+        Inicio
+      </a>
       <a
         routerLink="/dashboard"
         routerLinkActive="active"

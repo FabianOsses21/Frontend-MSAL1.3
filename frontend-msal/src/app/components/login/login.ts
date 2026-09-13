@@ -1,18 +1,27 @@
 import { Component, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
+
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class LoginComponent {
-
-  private authService = inject(AuthService);
+  readonly auth = inject(AuthService);
 
   login(): void {
-    this.authService.login();
+    this.auth.login();
+  }
+
+  registrar(): void {
+    this.auth.registrar();
+  }
+
+  logout(): void {
+    this.auth.logout();
   }
 }

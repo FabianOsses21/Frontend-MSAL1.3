@@ -10,20 +10,29 @@ import { Rol } from '../models/barrio.models';
 export class AuthService {
   private msalService = inject(MsalService);
 
-  login(): void {
+    login(): void {
+  this.msalService.loginRedirect({
+    scopes: [
+      'openid',
+      'profile',
+    ],
+    prompt: 'select_account',
+    redirectStartPage: `${window.location.origin}/dashboard`,
+  });
+}
+    registrar(): void {
     this.msalService.loginRedirect({
-      scopes: [
-        'openid',
-        'profile',
-        environment.azure.backendScope,
-      ],
-
+      scopes: ['openid', 'profile'],
       prompt: 'select_account',
+      redirectStartPage: window.location.origin + '/',
     });
   }
 
   logout(): void {
-    this.msalService.logoutRedirect();
+    this.msalService.logoutRedirect({
+      account: this.getAccount() ?? undefined,
+      postLogoutRedirectUri: environment.azure.redirectUri,
+    });
   }
 
   getAccount() {
