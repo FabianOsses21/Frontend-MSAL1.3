@@ -10,5 +10,5 @@ export const environment = {
     backendScope: 'api://54bc913a-2f45-4e55-9eae-b30616a9f8d5/OT.Create',
   },
 
-  apiUrl: 'http://localhost:8080'
+  apiUrl: 'https://a0ugnd6zvi.execute-api.us-east-1.amazonaws.com'
 };
