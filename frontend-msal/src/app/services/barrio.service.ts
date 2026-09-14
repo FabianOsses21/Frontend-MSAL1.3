@@ -111,10 +111,17 @@ export class BarrioService {
 
     const tramites = this.tramitesState();
 
+    const uid = this.auth.userId;
+    const account = this.auth.getAccount();
+    const localId = account?.localAccountId;
+
     return this.auth.puedeVerTodos
       ? tramites
       : tramites.filter(
-          (tramite) => tramite.propietarioId === this.auth.userId,
+          (tramite) =>
+            tramite.propietarioId === uid ||
+            (localId && tramite.propietarioId === localId) ||
+            tramite.propietarioNombre === this.auth.username,
         );
   }
 

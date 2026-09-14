@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -209,7 +209,7 @@ import {
     </section>
   `,
 })
-export class RequestsComponent {
+export class RequestsComponent implements OnInit {
   readonly auth = inject(AuthService);
   readonly barrio = inject(BarrioService);
 
@@ -227,6 +227,10 @@ export class RequestsComponent {
 
   error = '';
   mensaje = '';
+
+  ngOnInit(): void {
+    this.barrio.cargarDesdeBackend();
+  }
 
   get tiposFormulario() {
     return this.barrio.tipos().filter(
