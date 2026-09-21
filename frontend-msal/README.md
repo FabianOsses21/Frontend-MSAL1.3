@@ -1,51 +1,51 @@
 # Pedidos360 — Frontend (Angular + MSAL)
 
-Angular 22 SPA that authenticates against Microsoft Entra ID using MSAL (Authorization Code Flow + PKCE) and consumes the backend through AWS API Gateway.
+SPA Angular 22 que autentica contra Microsoft Entra ID usando MSAL (Authorization Code Flow + PKCE) y consume el backend a través de AWS API Gateway.
 
-## Architecture
+## Arquitectura
 
 ```mermaid
 graph LR
-    subgraph Client
+    subgraph Cliente
         A["Angular SPA<br/>MSAL + PKCE"]
     end
     subgraph Azure["Microsoft Entra ID (IDaaS)"]
-        B["Tenant<br/>SPA App + API App<br/>Scope: OT.Create"]
+        B["Tenant<br/>App SPA + App API<br/>Scope: OT.Create"]
     end
     subgraph AWS
         C["API Gateway<br/>JWT Authorizer + CORS"]
         D["EC2 · Spring Boot<br/>OAuth2 Resource Server"]
-        E[("H2 file / RDS")]
+        E[("H2 archivo / RDS")]
     end
     A -->|"1. loginRedirect (code + PKCE)"| B
     B -->|"2. id_token + access_token"| A
     A -->|"3. HTTPS · Authorization: Bearer JWT"| C
-    C -->|"4. valid token"| D
-    C -.->|"401 invalid token"| A
+    C -->|"4. token válido"| D
+    C -.->|"401 token inválido"| A
     D --> E
 ```
 
-## Authorization Code Flow with PKCE
+## Flujo Authorization Code con PKCE
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as User
+    participant U as Usuario
     participant F as Angular SPA (MSAL)
     participant E as Entra ID
-    U->>F: Click "Sign in"
-    F->>F: Generate code_verifier + code_challenge (S256)
+    U->>F: Click "Iniciar sesión"
+    F->>F: Genera code_verifier + code_challenge (S256)
     F->>E: GET /authorize?client_id&code_challenge&state&nonce
-    E->>U: Login / consent form
-    U->>E: Credentials
-    E->>F: Redirect to redirectUri with authorization code
+    E->>U: Formulario login / consentimiento
+    U->>E: Credenciales
+    E->>F: Redirect a redirectUri con authorization code
     F->>E: POST /token (code + code_verifier)
-    E->>E: Verify SHA256(code_verifier) == code_challenge
+    E->>E: Verifica SHA256(code_verifier) == code_challenge
     E->>F: id_token + access_token (JWT)
-    F->>F: Cache tokens in sessionStorage
+    F->>F: Cachea tokens en sessionStorage
 ```
 
-## Authenticated request flow (JWT validation)
+## Flujo de petición autenticada (validación JWT)
 
 ```mermaid
 sequenceDiagram
@@ -54,31 +54,31 @@ sequenceDiagram
     participant G as API Gateway (AWS)
     participant B as Spring Boot (EC2)
     F->>G: GET /api/requests<br/>Authorization: Bearer JWT
-    G->>G: JWT Authorizer: validate iss + aud
-    alt invalid / missing token
+    G->>G: JWT Authorizer: valida iss + aud
+    alt token inválido o ausente
         G-->>F: 401 Unauthorized
-    else valid token
-        G->>B: Forward request + JWT
-        B->>B: Resource Server verifies signature, issuer-uri, audience
-        alt missing SCOPE_OT.Create
+    else token válido
+        G->>B: Reenvía request + JWT
+        B->>B: Resource Server verifica firma, issuer-uri, audience
+        alt falta SCOPE_OT.Create
             B-->>F: 403 Forbidden
-        else authorized
+        else autorizado
             B-->>G: 200 + JSON
             G-->>F: 200 + JSON
         end
     end
 ```
 
-## Key files
+## Archivos clave
 
-| File | Purpose |
+| Archivo | Propósito |
 |---|---|
 | `src/environments/environment.ts` | `clientId`, `tenantId`, `backendScope`, `apiUrl` (API Gateway) |
-| `src/app/factories/msal-instance.factory.ts` | `PublicClientApplication` → PKCE flow, `sessionStorage` cache |
-| `src/app/app.config.ts` | `protectedResourceMap` + `MsalInterceptor` (auto Bearer token) |
-| `src/app/services/auth.service.ts` | `loginRedirect`, logout, roles from `idTokenClaims` |
-| `src/app/app.routes.ts` | `MsalGuard` on protected routes, `roleGuard` on `/catalog` |
-| `src/app/services/order.service.ts` | API calls through API Gateway, 401/403 error handling |
+| `src/app/factories/msal-instance.factory.ts` | `PublicClientApplication` → flujo PKCE, caché en `sessionStorage` |
+| `src/app/app.config.ts` | `protectedResourceMap` + `MsalInterceptor` (Bearer automático) |
+| `src/app/services/auth.service.ts` | `loginRedirect`, logout, roles desde `idTokenClaims` |
+| `src/app/app.routes.ts` | `MsalGuard` en rutas protegidas, `roleGuard` en `/catalog` |
+| `src/app/services/order.service.ts` | Llamadas a la API vía API Gateway, manejo de errores 401/403 |
 
 ---
 
